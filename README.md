@@ -1,4 +1,4 @@
-- 👋 Hi, I’m Krishna Agrawal. I am a sophomore in the Electrical Engineering Department of IIT Kanpur.
+- 👋 Hi, I’m Krishna Agrawal. I am a junior in the Electrical Engineering Department of IIT Kanpur.
 - 👀 I’m interested in exploring Software development.
 - 🌱 I’m currently learning Networking and Operating System basics for Cybersecurity.
 
