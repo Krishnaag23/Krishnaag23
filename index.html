@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weekly Timetable</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2em;
+        margin-bottom: 10px;
+      }
+
+      .stats {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+      }
+
+      .stat {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 8px 16px;
+        border-radius: 20px;
+      }
+
+      .legend {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        flex-wrap: wrap;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .legend-box {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+      }
+
+      .timetable-wrapper {
+        padding: 30px;
+        overflow-x: auto;
+      }
+
+      .timetable {
+        display: grid;
+        grid-template-columns: 100px repeat(5, 1fr);
+        gap: 2px;
+        min-width: 900px;
+      }
+
+      .time-header,
+      .day-header {
+        background: #667eea;
+        color: white;
+        padding: 15px;
+        font-weight: bold;
+        text-align: center;
+        border-radius: 8px;
+      }
+
+      .time-slot {
+        background: #f8f9fa;
+        padding: 10px;
+        text-align: center;
+        font-weight: 600;
+        color: #495057;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .cell {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        min-height: 80px;
+        position: relative;
+      }
+
+      .event {
+        padding: 8px;
+        border-radius: 6px;
+        margin: 2px;
+        font-size: 0.85em;
+        height: calc(100% - 4px);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .event:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .event-title {
+        font-weight: bold;
+        margin-bottom: 4px;
+      }
+
+      .event-time {
+        font-size: 0.9em;
+        opacity: 0.8;
+      }
+
+      .event-type {
+        font-size: 0.85em;
+        margin-top: 2px;
+      }
+
+      .clash {
+        background: #ff6b6b !important;
+        color: white !important;
+        animation: pulse 2s infinite ease-out;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      .lec {
+        background: #4dabf7;
+        color: white;
+      }
+      .tut {
+        background: #51cf66;
+        color: white;
+      }
+      .prc {
+        background: #ff922b;
+        color: white;
+      }
+
+      .clash-warning {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        margin: 20px 30px;
+        border-radius: 8px;
+      }
+
+      .clash-warning h3 {
+        color: #856404;
+        margin-bottom: 10px;
+      }
+
+      .clash-list {
+        list-style: none;
+      }
+
+      .clash-list li {
+        padding: 8px 0;
+        color: #856404;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📚 Weekly Timetable</h1>
+        <div class="stats">
+          <div class="stat">
+            <span>📅</span>
+            <span id="totalClasses">0 Classes</span>
+          </div>
+          <div class="stat">
+            <span>⚠️</span>
+            <span id="clashCount">0 Clashes</span>
+          </div>
+          <div class="stat">
+            <span>📖</span>
+            <span id="courseCount">0 Courses</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-box lec"></div>
+          <span>Lecture</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-box tut"></div>
+          <span>Tutorial</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-box prc"></div>
+          <span>Practical</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-box clash"></div>
+          <span>Clash Detected</span>
+        </div>
+      </div>
+
+      <div id="clashWarnings"></div>
+
+      <div class="timetable-wrapper">
+        <div class="timetable" id="timetable"></div>
+      </div>
+    </div>
+
+    <script>
+      const events = [
+        {
+          start: "2025-10-29T08:00:00-05:00",
+          description: "ELECTROMAGNETIC THEORY",
+          end: "2025-10-29T09:00:00-05:00",
+          id: 12699,
+          title: "Lec-EE340",
+        },
+        {
+          start: "2025-10-27T08:00:00-05:00",
+          description: "ELECTROMAGNETIC THEORY",
+          end: "2025-10-27T09:00:00-05:00",
+          id: 12699,
+          title: "Lec-EE340",
+        },
+        {
+          start: "2025-10-28T09:00:00-05:00",
+          description: "ELECTRICAL ENGINEERING LAB II",
+          end: "2025-10-28T10:00:00-05:00",
+          id: 12700,
+          title: "Tut-EE381",
+        },
+        {
+          start: "2025-10-30T10:00:00-05:00",
+          description: "ELECTROMAGNETIC THEORY",
+          end: "2025-10-30T11:00:00-05:00",
+          id: 12699,
+          title: "Lec-EE340",
+        },
+        {
+          start: "2025-10-31T11:00:00-05:00",
+          description: "MICROELECTRONICS II",
+          end: "2025-10-31T12:00:00-05:00",
+          id: 12706,
+          title: "Lec-EE311",
+        },
+        {
+          start: "2025-10-30T11:00:00-05:00",
+          description: "MICROELECTRONICS II",
+          end: "2025-10-30T12:00:00-05:00",
+          id: 12706,
+          title: "Lec-EE311",
+        },
+        {
+          start: "2025-10-29T11:00:00-05:00",
+          description: "MICROELECTRONICS II",
+          end: "2025-10-29T12:00:00-05:00",
+          id: 12706,
+          title: "Lec-EE311",
+        },
+        {
+          start: "2025-10-27T11:00:00-05:00",
+          description: "ELECTRICAL ENGINEERING LAB II",
+          end: "2025-10-27T12:00:00-05:00",
+          id: 12700,
+          title: "Tut-EE381",
+        },
+        {
+          start: "2025-10-28T12:00:00-05:00",
+          description: "COMPUTER ARCHITECTURE",
+          end: "2025-10-28T13:15:00-05:00",
+          id: 12818,
+          title: "Lec-CS422",
+        },
+        {
+          start: "2025-10-29T12:00:00-05:00",
+          description: "COMPUTER ARCHITECTURE",
+          end: "2025-10-29T13:15:00-05:00",
+          id: 12818,
+          title: "Lec-CS422",
+        },
+        {
+          start: "2025-10-27T14:00:00-05:00",
+          description: "ELECTRICAL ENGINEERING LAB II",
+          end: "2025-10-27T17:00:00-05:00",
+          id: 12700,
+          title: "Prc-EE381",
+        },
+        {
+          start: "2025-10-28T14:00:00-05:00",
+          description: "ELECTRICAL ENGINEERING LAB II",
+          end: "2025-10-28T17:00:00-05:00",
+          id: 12700,
+          title: "Prc-EE381",
+        },
+        {
+          start: "2025-10-29T14:00:00-05:00",
+          description: "ELECTRICAL ENGINEERING LAB II",
+          end: "2025-10-29T17:00:00-05:00",
+          id: 12700,
+          title: "Prc-EE381",
+        },
+        {
+          start: "2025-10-30T14:00:00-05:00",
+          description: "ELECTRICAL ENGINEERING LAB II",
+          end: "2025-10-30T17:00:00-05:00",
+          id: 12700,
+          title: "Prc-EE381",
+        },
+        {
+          start: "2025-10-31T14:00:00-05:00",
+          description: "ELECTROMAGNETIC THEORY",
+          end: "2025-10-31T15:00:00-05:00",
+          id: 12699,
+          title: "Tut-EE340",
+        },
+        {
+          start: "2025-10-31T15:00:00-05:00",
+          description: "ELECTRICAL ENGINEERING LAB II",
+          end: "2025-10-31T16:00:00-05:00",
+          id: 12700,
+          title: "Tut-EE381",
+        },
+        {
+          start: "2025-10-27T15:30:00-05:00",
+          description: "PARALLEL COMPUTING",
+          end: "2025-10-27T17:00:00-05:00",
+          id: 12866,
+          title: "Lec-CS633",
+        },
+        {
+          start: "2025-10-29T15:30:00-05:00",
+          description: "PARALLEL COMPUTING",
+          end: "2025-10-29T17:00:00-05:00",
+          id: 12866,
+          title: "Lec-CS633",
+        },
+        {
+          start: "2025-10-27T17:15:00-05:00",
+          description: "POWER ELECTRONICS",
+          end: "2025-10-27T18:30:00-05:00",
+          id: 12712,
+          title: "Lec-EE360",
+        },
+        {
+          start: "2025-10-29T17:15:00-05:00",
+          description: "POWER ELECTRONICS",
+          end: "2025-10-29T18:30:00-05:00",
+          id: 12712,
+          title: "Lec-EE360",
+        },
+      ];
+      const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+      const dayMap = {
+        0: "Monday",
+        1: "Tuesday",
+        2: "Wednesday",
+        3: "Thursday",
+        4: "Friday",
+      };
+      const timeSlots = [
+        "08:00",
+        "09:00",
+        "10:00",
+        "11:00",
+        "12:00",
+        "13:00",
+        "14:00",
+        "15:00",
+        "16:00",
+        "17:00",
+      ];
+
+      function parseEvents() {
+        return events.map((e) => ({
+          ...e,
+          start: new Date(e.start.substring(0, 19)),
+          end: new Date(e.end.substring(0, 19)),
+          day:
+            new Date(e.start.substring(0, 19)).getDay() === 0
+              ? 6
+              : new Date(e.start.substring(0, 19)).getDay() - 1,
+          type: e.title.split("-")[0].toLowerCase(),
+        }));
+      }
+
+      function detectClashes(events) {
+        const clashes = [];
+        for (let i = 0; i < events.length; i++) {
+          for (let j = i + 1; j < events.length; j++) {
+            if (events[i].day === events[j].day) {
+              const overlap =
+                events[i].start < events[j].end &&
+                events[i].end > events[j].start;
+              if (overlap) {
+                clashes.push([events[i], events[j]]);
+              }
+            }
+          }
+        }
+        return clashes;
+      }
+
+      function formatTime(date) {
+        return date.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        });
+      }
+
+      function createTimetable() {
+        const parsedEvents = parseEvents();
+        console.log(parsedEvents);
+        const clashes = detectClashes(parsedEvents);
+        const clashSet = new Set();
+
+        clashes.forEach(([e1, e2]) => {
+          clashSet.add(e1.title + e1.start + e1.end);
+          clashSet.add(e2.title + e2.start + e2.end);
+        });
+
+        const timetable = document.getElementById("timetable");
+
+        // Header row
+        timetable.innerHTML = '<div class="time-header">Time</div>';
+        days.forEach((day) => {
+          timetable.innerHTML += `<div class="day-header">${day}</div>`;
+        });
+
+        // Time slots
+        timeSlots.forEach((time) => {
+          timetable.innerHTML += `<div class="time-slot">${time}</div>`;
+
+          for (let day = 0; day < 5; day++) {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+
+            const dayEvents = parsedEvents.filter((e) => {
+              const eventHour = e.start.getHours();
+              const slotHour = parseInt(time.split(":")[0]);
+              return e.day === day && eventHour === slotHour;
+            });
+
+            dayEvents.forEach((e) => {
+              const isClash = clashSet.has(e.title + e.start + e.end);
+              console.log(clashSet);
+              const eventDiv = document.createElement("div");
+              eventDiv.className = `event ${e.type} ${isClash ? "clash" : ""}`;
+              eventDiv.innerHTML = `
+                            <div class="event-title">${e.description}</div>
+                            <div class="event-time">${formatTime(
+                              e.start
+                            )} - ${formatTime(e.end)}</div>
+                            <div class="event-type">${e.title}</div>
+                        `;
+              cell.appendChild(eventDiv);
+            });
+
+            timetable.appendChild(cell);
+          }
+        });
+
+        // Update stats
+        const uniqueCourses = new Set(parsedEvents.map((e) => e.id)).size;
+        document.getElementById(
+          "totalClasses"
+        ).textContent = `${parsedEvents.length} Classes`;
+        document.getElementById(
+          "clashCount"
+        ).textContent = `${clashes.length} Clashes`;
+        document.getElementById(
+          "courseCount"
+        ).textContent = `${uniqueCourses} Courses`;
+
+        // Display clash warnings
+        if (clashes.length > 0) {
+          const warningsDiv = document.getElementById("clashWarnings");
+          let html =
+            '<div class="clash-warning"><h3>⚠️ Schedule Conflicts Detected</h3><ul class="clash-list">';
+          clashes.forEach(([e1, e2]) => {
+            html += `<li><strong>${dayMap[e1.day]}</strong>: ${
+              e1.description
+            } conflicts (${formatTime(e1.start)} - ${formatTime(
+              e1.end
+            )}) with ${e2.description} ${formatTime(e2.start)} - ${formatTime(
+              e2.end
+            )}</li>`;
+          });
+          html += "</ul></div>";
+          warningsDiv.innerHTML = html;
+        }
+      }
+
+      createTimetable();
+    </script>
+  </body>
+</html>
